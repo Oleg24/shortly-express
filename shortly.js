@@ -101,7 +101,12 @@ app.post('/signup', function(req, res){
   User.signup(userName, password).then(function(){
     //  user.login();
     res.redirect('/');
+  }).catch(function(err){
+    console.log(err);
+    res.send(err);
+    res.redirect('/');
   });
+
 });
 app.get('/login', function(req, res){
   res.render('login');
@@ -115,13 +120,18 @@ app.post('/login', function(req, res){
     
   User.login(userName, password).then(function(){
     //  user.login();
-    request.session.regenerate(function(){
-            request.session.user = userName;
-            response.redirect('/');
+    req.session.regenerate(function(){
+            req.session.user = userName;
+            res.redirect('/');
           });
   });
 });
-
+app.get('/logout', function(req, res){
+  User.logout(req.session)
+    .then(function(){
+      res.redirect('/login');
+    });
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
@@ -150,6 +160,7 @@ app.get('/*', function(req, res) {
     }
   });
 });
+
 
 console.log('Shortly is listening on 4568');
 app.listen(4568);
