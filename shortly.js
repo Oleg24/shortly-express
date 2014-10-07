@@ -2,7 +2,8 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-
+// var cookieParser = require('cookie-parser');
+var session = require('express-session');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -21,23 +22,39 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+// app.use(cookieParser('rishiandoleg'));
+app.use(session({secret: 'rishiandoleg', resave: true, saveUninitialized: true}));
 
 
 app.get('/', 
 function(req, res) {
-  res.render('index');
+  // console.log(req.session.user);
+  if (req.session && req.session.user) {
+    res.render('index');
+  } else {
+    // res.redirect('/login');
+    res.redirect('/login');
+  }
 });
 
 app.get('/create', 
 function(req, res) {
-  res.render('index');
+  if (req.session && req.session.user) {
+    res.render('index');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get('/links', 
 function(req, res) {
-  Links.reset().fetch().then(function(links) {
-    res.send(200, links.models);
-  });
+  if(req.session && req.session.user) {
+    Links.reset().fetch().then(function(links) {
+      res.send(200, links.models);
+    });
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.post('/links', 
@@ -77,7 +94,33 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-
+app.post('/signup', function(req, res){
+  var userName = req.body.username;
+  var password = req.body.password;
+    
+  User.signup(userName, password).then(function(){
+    //  user.login();
+    res.redirect('/');
+  });
+});
+app.get('/login', function(req, res){
+  res.render('login');
+});
+app.get('/signup', function(req, res){
+  res.render('signup');
+});
+app.post('/login', function(req, res){
+  var userName = req.body.username;
+  var password = req.body.password;
+    
+  User.login(userName, password).then(function(){
+    //  user.login();
+    request.session.regenerate(function(){
+            request.session.user = userName;
+            response.redirect('/');
+          });
+  });
+});
 
 
 /************************************************************/
