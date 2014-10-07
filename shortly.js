@@ -26,7 +26,7 @@ app.use(express.static(__dirname + '/public'));
 app.use(session({secret: 'rishiandoleg', resave: true, saveUninitialized: true}));
 
 
-app.get('/', 
+app.get('/',
 function(req, res) {
   // console.log(req.session.user);
   if (req.session && req.session.user) {
@@ -37,7 +37,7 @@ function(req, res) {
   }
 });
 
-app.get('/create', 
+app.get('/create',
 function(req, res) {
   if (req.session && req.session.user) {
     res.render('index');
@@ -46,7 +46,7 @@ function(req, res) {
   }
 });
 
-app.get('/links', 
+app.get('/links',
 function(req, res) {
   if(req.session && req.session.user) {
     Links.reset().fetch().then(function(links) {
@@ -57,38 +57,42 @@ function(req, res) {
   }
 });
 
-app.post('/links', 
+app.post('/links',
 function(req, res) {
-  var uri = req.body.url;
+  if (!req.session || req.session && !req.session.user) {
+    res.redirect('/login');
+  } else {
+    var uri = req.body.url;
 
-  if (!util.isValidUrl(uri)) {
-    console.log('Not a valid url: ', uri);
-    return res.send(404);
-  }
-
-  new Link({ url: uri }).fetch().then(function(found) {
-    if (found) {
-      res.send(200, found.attributes);
-    } else {
-      util.getUrlTitle(uri, function(err, title) {
-        if (err) {
-          console.log('Error reading URL heading: ', err);
-          return res.send(404);
-        }
-
-        var link = new Link({
-          url: uri,
-          title: title,
-          base_url: req.headers.origin
-        });
-
-        link.save().then(function(newLink) {
-          Links.add(newLink);
-          res.send(200, newLink);
-        });
-      });
+    if (!util.isValidUrl(uri)) {
+      console.log('Not a valid url: ', uri);
+      return res.send(404);
     }
-  });
+
+    new Link({ url: uri }).fetch().then(function(found) {
+      if (found) {
+        res.send(200, found.attributes);
+      } else {
+        util.getUrlTitle(uri, function(err, title) {
+          if (err) {
+            console.log('Error reading URL heading: ', err);
+            return res.send(404);
+          }
+
+          var link = new Link({
+            url: uri,
+            title: title,
+            base_url: req.headers.origin
+          });
+
+          link.save().then(function(newLink) {
+            Links.add(newLink);
+            res.send(200, newLink);
+          });
+        });
+      }
+    });
+  }
 });
 
 /************************************************************/
@@ -97,13 +101,12 @@ function(req, res) {
 app.post('/signup', function(req, res){
   var userName = req.body.username;
   var password = req.body.password;
-    
+
   User.signup(userName, password).then(function(){
     //  user.login();
     res.redirect('/');
   }).catch(function(err){
     console.log(err);
-    res.send(err);
     res.redirect('/');
   });
 
@@ -117,13 +120,17 @@ app.get('/signup', function(req, res){
 app.post('/login', function(req, res){
   var userName = req.body.username;
   var password = req.body.password;
-    
-  User.login(userName, password).then(function(){
+
+  User.login(userName, password).then(function(val){
     //  user.login();
-    req.session.regenerate(function(){
+    if (val) {
+      req.session.regenerate(function(){
             req.session.user = userName;
             res.redirect('/');
           });
+    } else {
+      res.redirect('/login');
+    }
   });
 });
 app.get('/logout', function(req, res){

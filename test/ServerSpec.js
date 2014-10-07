@@ -13,9 +13,7 @@ var Link = require('../app/models/link');
 // Remove the 'x' from beforeEach block when working on
 // authentication tests.
 /************************************************************/
-var beforeEach = function(func){
-  func.call(this);
-};
+var xbeforeEach = function(func){};
 /************************************************************/
 
 
@@ -66,24 +64,8 @@ describe('', function() {
     var requestWithSession = request.defaults({jar: true});
 
     beforeEach(function(done){      // create a user that we can then log-in with
-      new User({
-          'username': 'Phillip',
-          'password': 'Phillip'
-      }).save().then(function(){
-        var options = {
-          'method': 'POST',
-          'followAllRedirects': true,
-          'uri': 'http://127.0.0.1:4568/login',
-          'json': {
-            'username': 'Phillip',
-            'password': 'Phillip'
-          }
-        };
-        // login via form and save session info
-        requestWithSession(options, function(error, res, body) {
-          console.log('user logged in');
-          done();
-        });
+      User.login('Phillip','Phillip').then(function() {
+        done();
       });
     });
 
@@ -139,12 +121,12 @@ describe('', function() {
       it('Fetches the link url title', function (done) {
         requestWithSession(options, function(error, res, body) {
           db.knex('urls')
-            .where('title', '=', 'Rofl Zoo - Daily funny animal pictures')
+            .where('title', '=', 'Funny animal pictures, funny animals, funniest dogs')
             .then(function(urls) {
               if (urls['0'] && urls['0']['title']) {
                 var foundTitle = urls['0']['title'];
               }
-              expect(foundTitle).to.equal('Rofl Zoo - Daily funny animal pictures');
+              expect(foundTitle).to.equal('Funny animal pictures, funny animals, funniest dogs');
               done();
             });
         });
@@ -157,33 +139,18 @@ describe('', function() {
       var link;
 
       beforeEach(function(done){      // create a user that we can then log-in with
-      new User({
-          'username': 'Phillip',
-          'password': 'Phillip'
-      }).save().then(function(){
-        var options = {
-          'method': 'POST',
-          'followAllRedirects': true,
-          'uri': 'http://127.0.0.1:4568/login',
-          'json': {
-            'username': 'Phillip',
-            'password': 'Phillip'
-          }
-        };
-        // login via form and save session info
-        requestWithSession(options, function(error, res, body) {
-          console.log('user logged in');
-          // done();
-        });
-      });
-        // save a link to the database
-        link = new Link({
-          url: 'http://www.roflzoo.com/',
-          title: 'Rofl Zoo - Daily funny animal pictures',
-          base_url: 'http://127.0.0.1:4568'
-        });
-        link.save().then(function(){
-          done();
+        User.login('Phillip', 'Phillip')
+        .then(function() {
+          console.log('logged in');
+          // save a link to the database
+          link = new Link({
+            url: 'http://www.roflzoo.com/',
+            title: 'Funny animal pictures, funny animals, funniest dogs',
+            base_url: 'http://127.0.0.1:4568'
+          });
+          link.save().then(function(){
+            done();
+          });
         });
       });
 
@@ -223,7 +190,7 @@ describe('', function() {
         };
 
         requestWithSession(options, function(error, res, body) {
-          expect(body).to.include('"title":"Rofl Zoo - Daily funny animal pictures"');
+          expect(body).to.include('"title":"Funny animal pictures, funny animals, funniest dogs"');
           expect(body).to.include('"code":"' + link.get('code') + '"');
           done();
         });
@@ -312,10 +279,8 @@ describe('', function() {
     var requestWithSession = request.defaults({jar: true});
 
     beforeEach(function(done){
-      new User({
-          'username': 'Phillip',
-          'password': 'Phillip'
-      }).save().then(function(){
+      User.signup('Phillip', 'Phillip')
+      .then(function(){
         done()
       });
     })
