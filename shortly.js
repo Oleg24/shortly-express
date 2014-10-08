@@ -131,6 +131,8 @@ app.post('/login', function(req, res){
     } else {
       res.redirect('/login');
     }
+  }).catch(function(err){
+    res.redirect('/login');
   });
 });
 app.get('/logout', function(req, res){

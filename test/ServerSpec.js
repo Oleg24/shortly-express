@@ -36,7 +36,7 @@ describe('', function() {
 
     // delete user Svnh from db so it can be created later for the test
     db.knex('users')
-      .where('username', '=', 'Svnh')
+      .where('username', '=', 'Svnh'.toLowerCase().trim())
       .del()
       .catch(function(error) {
         // uncomment when writing authentication tests
@@ -64,8 +64,36 @@ describe('', function() {
     var requestWithSession = request.defaults({jar: true});
 
     beforeEach(function(done){      // create a user that we can then log-in with
-      User.login('Phillip','Phillip').then(function() {
-        done();
+      User.signup('Phillip', 'Phillip').then(function() {
+        var options = {
+          'method': 'POST',
+          'uri': 'http://127.0.0.1:4568/login',
+          'followAllRedirects': true,
+          'json': {
+            'username': 'Phillip',
+            'password': 'Phillip'
+          }
+        };
+
+        requestWithSession(options, function(error, res, body) {
+          // res comes from the request module, and may not follow express conventions
+          done();
+        });
+      }).catch(function(err){
+        var options = {
+          'method': 'POST',
+          'uri': 'http://127.0.0.1:4568/login',
+          'followAllRedirects': true,
+          'json': {
+            'username': 'Phillip',
+            'password': 'Phillip'
+          }
+        };
+
+        requestWithSession(options, function(error, res, body) {
+          // res comes from the request module, and may not follow express conventions
+          done();
+        });
       });
     });
 
@@ -141,7 +169,6 @@ describe('', function() {
       beforeEach(function(done){      // create a user that we can then log-in with
         User.login('Phillip', 'Phillip')
         .then(function() {
-          console.log('logged in');
           // save a link to the database
           link = new Link({
             url: 'http://www.roflzoo.com/',
@@ -204,7 +231,6 @@ describe('', function() {
 
     it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
       request('http://127.0.0.1:4568/', function(error, res, body) {
-        console.log(res);
         expect(res.req.path).to.equal('/login');
         done();
       });
@@ -240,14 +266,15 @@ describe('', function() {
 
       request(options, function(error, res, body) {
         db.knex('users')
-          .where('username', '=', 'Svnh')
+          .where('username', '=', 'Svnh'.toLowerCase().trim())
           .then(function(res) {
             if (res[0] && res[0]['username']) {
               var user = res[0]['username'];
             }
-            expect(user).to.equal('Svnh');
+            expect(user).to.equal('svnh');
             done();
           }).catch(function(err) {
+            console.log(err);
             throw {
               type: 'DatabaseError',
               message: 'Failed to create test setup data'
@@ -278,12 +305,12 @@ describe('', function() {
 
     var requestWithSession = request.defaults({jar: true});
 
-    beforeEach(function(done){
-      User.signup('Phillip', 'Phillip')
-      .then(function(){
-        done()
-      });
-    })
+    // beforeEach(function(done){
+    //   User.signup('Phillip', 'Phillip')
+    //   .then(function(){
+    //     done()
+    //   });
+    // })
 
     it('Logs in existing users', function(done) {
       var options = {
